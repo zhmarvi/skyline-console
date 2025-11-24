@@ -16,11 +16,11 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import renderRoutes from 'utils/RouterConfig';
 
-import loginFullImageWebp from 'asset/image/login-full.webp';
-import loginFullImagePng from 'asset/image/login-full.png';
+import loginFullImageWebp from 'asset/image/mda-skyline.webp';
+import loginFullImagePng from 'asset/image/mda-skyline.png';
 // import genestackLogo from 'asset/image/genestackLogo.png';
-import openstackLogoWebp from 'asset/image/openstack-new-logo.webp';
-import openstackLogoPng from 'asset/image/openstack-new-logo.png';
+import openstackLogoWebp from 'asset/image/mda-logo.webp';
+import openstackLogoPng from 'asset/image/mda-logo.png';
 import styles from './index.less';
 
 export class AuthLayout extends Component {
