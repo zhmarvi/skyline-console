@@ -92,7 +92,7 @@ export class AuthLayout extends Component {
             <h2
               id="brand-title"
               className={styles.brandTitle}
-              aria-label="Rackspace OpenStack platform"
+              aria-label="Rackspace OpenStack platform for MD Anderson"
             >
               Rackspace OpenStack
             </h2>
