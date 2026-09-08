@@ -1215,6 +1215,51 @@ const renderMenu = (t) => {
       ],
     },
     {
+      path: '/cloudkitty-admin',
+      name: t('Rating'),
+      key: 'cloudkittyAdmin',
+      endpoints: 'cloudkitty',
+      icon: <CreditCardOutlined />,
+      children: [
+        {
+          path: '/cloudkitty-admin/summary',
+          name: t('Summary'),
+          key: 'cloudkittySummaryAdmin',
+          level: 1,
+          children: [],
+        },
+        {
+          path: '/cloudkitty-admin/modules',
+          name: t('Rating Modules'),
+          key: 'cloudkittyModulesAdmin',
+          level: 1,
+          children: [],
+        },
+        {
+          path: '/cloudkitty-admin/hashmap',
+          name: t('HashMap'),
+          key: 'cloudkittyHashmapAdmin',
+          level: 1,
+          children: [
+            {
+              path: /^\/cloudkitty-admin\/hashmap\/detail\/.[^/]+$/,
+              name: t('HashMap Service Detail'),
+              key: 'cloudkittyHashmapServiceDetailAdmin',
+              level: 2,
+              routePath: '/cloudkitty-admin/hashmap/detail/:id',
+            },
+          ],
+        },
+        {
+          path: '/cloudkitty-admin/pyscripts',
+          name: t('PyScripts'),
+          key: 'cloudkittyPyScriptsAdmin',
+          level: 1,
+          children: [],
+        },
+      ],
+    },
+    {
       type: 'divider',
       key: 'help-divider-admin',
     },
