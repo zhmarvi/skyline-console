@@ -60,9 +60,15 @@ export class CloudKittyClient extends Base {
         responseKey: 'metric',
       },
       // --- HashMap module config ---
+      // NOTE: the services collection lives at `.../hashmap/services`. Do not
+      // confuse it with `.../hashmap/types`, which is a custom GET action
+      // returning the mapping cost-type enum (`["flat", "rate"]`) and supports
+      // no other verb. The base store derives the list key by pluralizing
+      // `responseKey`, giving `services`, which matches the API's
+      // ServiceCollection.
       {
         name: 'hashmapServices',
-        key: 'v1/rating/module_config/hashmap/types',
+        key: 'v1/rating/module_config/hashmap/services',
         responseKey: 'service',
       },
       {

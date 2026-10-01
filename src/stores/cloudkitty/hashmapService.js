@@ -17,16 +17,17 @@ import { get } from 'lodash';
 import client from 'client';
 import Base from 'stores/base';
 
-// HashMap services (the API calls them "types") are the top level of the
-// hashmap module config: /v1/rating/module_config/hashmap/types.
-// Each service can own fields, mappings and thresholds.
+// HashMap services are the top level of the hashmap module config:
+// /v1/rating/module_config/hashmap/services, which returns { services: [...] }.
+// Each service can own fields, mappings and thresholds, all of which are
+// listed with ?service_id=<service_id>.
 export class CloudKittyHashMapServiceStore extends Base {
   get client() {
     return client.cloudkitty.hashmapServices;
   }
 
-  // No `filterByApi` here: the types endpoint takes no filter params, so the
-  // Name search is applied client-side by the list container.
+  // No `filterByApi` here: the services endpoint takes no filter params, so
+  // the Name search is applied client-side by the list container.
 
   get mapper() {
     return (item) => ({
