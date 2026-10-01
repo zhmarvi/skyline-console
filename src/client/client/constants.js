@@ -91,8 +91,17 @@ export const zaqarBase = () => getOpenstackEndpoint('zaqar');
 export const freezerBase = () => getOpenstackEndpoint('freezer');
 export const qonosBase = () => getOpenstackEndpoint('qonos');
 // CloudKitty (rating) exposes both v1 (rating/hashmap/pyscripts/info) and v2
-// (summary) APIs, so we expose the raw origin endpoint and let the client
-// prefix resource paths with the appropriate version.
+// (summary) APIs, so we return the un-versioned endpoint and let the client
+// prefix each resource path with the version it needs.
+//
+// Deployment note: CloudKitty registers in the keystone catalog under the
+// service type "rating", and skyline-apiserver only publishes catalog entries
+// whose service type appears in its `openstack.service_mapping` config,
+// silently skipping the rest. That mapping has no "rating" entry by default,
+// so the deployment must add `rating: cloudkitty` for this to resolve (the
+// same setting also generates the nginx proxy route). Until it does, this
+// returns undefined, the client reports itself disabled and the Rating menu
+// stays hidden.
 export const cloudkittyBase = () => getOriginEndpoint('cloudkitty');
 
 export const ironicOriginEndpoint = () => getOriginEndpoint('ironic');
