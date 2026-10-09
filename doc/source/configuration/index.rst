@@ -6,6 +6,7 @@ Configuration Guide
    :maxdepth: 1
 
    skyline-console-settings
+   rating-service
 
 For more information about skyline configuration settings, see
 `OpenStack Skyline Settings <https://docs.openstack.org/skyline-apiserver/latest/configuration/settings.html>`__.
