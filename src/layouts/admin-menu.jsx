@@ -14,6 +14,7 @@
 
 import React from 'react';
 import {
+  AccountBookOutlined,
   DesktopOutlined,
   DatabaseOutlined,
   CreditCardOutlined,
@@ -1219,7 +1220,7 @@ const renderMenu = (t) => {
       name: t('Rating'),
       key: 'cloudkittyAdmin',
       endpoints: 'cloudkitty',
-      icon: <CreditCardOutlined />,
+      icon: <AccountBookOutlined />,
       children: [
         {
           path: '/cloudkitty-admin/summary',
@@ -1240,6 +1241,9 @@ const renderMenu = (t) => {
           name: t('Rating Modules'),
           key: 'cloudkittyModulesAdmin',
           level: 1,
+          // Admin-only in CloudKitty (rating:list_modules => role:admin), so
+          // hide from system-reader users rather than letting them hit a 401.
+          policy: 'rating:list_modules',
           children: [],
         },
         {
@@ -1247,6 +1251,8 @@ const renderMenu = (t) => {
           name: t('HashMap'),
           key: 'cloudkittyHashmapAdmin',
           level: 1,
+          // Admin-only in CloudKitty (rating:module_config => role:admin).
+          policy: 'rating:module_config',
           children: [
             {
               path: /^\/cloudkitty-admin\/hashmap\/detail\/.[^/]+$/,
@@ -1262,6 +1268,8 @@ const renderMenu = (t) => {
           name: t('PyScripts'),
           key: 'cloudkittyPyScriptsAdmin',
           level: 1,
+          // Admin-only in CloudKitty (rating:module_config => role:admin).
+          policy: 'rating:module_config',
           children: [],
         },
       ],

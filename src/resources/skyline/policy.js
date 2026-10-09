@@ -94,8 +94,6 @@ export const policyMap = {
   qonos: ['qonos:'],
   zaqar: ['messaging:'],
   freezer: ['freezer:'],
-  // CloudKitty (rating). The apiserver publishes these as
-  // "cloudkitty:rating:*" and "cloudkitty:summary:*".
   cloudkitty: ['rating:', 'summary:'],
 };
 
