@@ -29,6 +29,39 @@ export class CloudKittyClient extends Base {
     return !!cloudkittyEndpoint();
   }
 
+  get request() {
+    const request = super.request;
+    // Like Octavia, CloudKitty v1 uses WSME content negotiation. Axios's
+    // default Accept includes */*, which can select XML instead of JSON.
+    const jsonConfig = (conf = {}) => ({
+      ...conf,
+      headers: { ...conf.headers, Accept: 'application/json' },
+    });
+    return {
+      get: async (url, params, conf) => {
+        const result = await request.get(url, params, jsonConfig(conf));
+        // A successful XML/HTML response must reach the list's error handler,
+        // rather than becoming [] when the store looks up its collection key.
+        if (typeof result === 'string') {
+          throw new Error(
+            'CloudKitty returned a non-JSON response; expected application/json.'
+          );
+        }
+        return result;
+      },
+      post: (url, data, params, conf) =>
+        request.post(url, data, params, jsonConfig(conf)),
+      put: (url, data, params, conf) =>
+        request.put(url, data, params, jsonConfig(conf)),
+      delete: (url, data, params, conf) =>
+        request.delete(url, data, params, jsonConfig(conf)),
+      patch: (url, data, params, conf) =>
+        request.patch(url, data, params, jsonConfig(conf)),
+      head: (url, params, conf) => request.head(url, params, jsonConfig(conf)),
+      copy: (url, params, conf) => request.copy(url, params, jsonConfig(conf)),
+    };
+  }
+
   get resources() {
     return [
       // --- Rating modules (enable/disable, priority) ---
