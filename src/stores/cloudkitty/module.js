@@ -40,12 +40,12 @@ export class CloudKittyModuleStore extends Base {
 
   @action
   async toggle({ id }, enabled) {
-    return this.submitting(this.client.update(id, { enabled }));
+    return this.submitting(this.client.update(id, { module_id: id, enabled }));
   }
 
   @action
   async updatePriority({ id }, priority) {
-    return this.submitting(this.client.update(id, { priority }));
+    return this.submitting(this.client.update(id, { module_id: id, priority }));
   }
 
   @action

@@ -122,6 +122,33 @@ it('keeps the disabled-service behavior', async () => {
   expect(adapter).not.toHaveBeenCalled();
 });
 
+it.each([
+  ['toggle', false, { enabled: false }],
+  ['toggle', true, { enabled: true }],
+  ['updatePriority', 0, { priority: 0 }],
+  ['updatePriority', 5, { priority: 5 }],
+])(
+  'includes the mandatory body module_id for %s(%p)',
+  async (method, value, changes) => {
+    adapter.mockImplementation(async (config) => {
+      const body = JSON.parse(config.data);
+      // CloudKitty v1 validates the body independently of the URL module ID.
+      if (!body.module_id) {
+        throw new Error('Mandatory field missing: module_id');
+      }
+      return { config, status: 200, headers: {}, data: '{}' };
+    });
+    await new CloudKittyModuleStore()[method]({ id: 'noop' }, value);
+    const config = adapter.mock.calls[0][0];
+    expect(config.method).toBe('put');
+    expect(config.url).toBe(
+      '/api/openstack/regionone/cloudkitty/v1/rating/modules/noop'
+    );
+    expect(config.headers.Accept).toBe('application/json');
+    expect(JSON.parse(config.data)).toEqual({ module_id: 'noop', ...changes });
+  }
+);
+
 it('rejects XML instead of silently displaying an empty table', async () => {
   adapter.mockImplementation(async (config) => ({
     config,
