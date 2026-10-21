@@ -48,14 +48,6 @@ export default [
     routes: [
       { path: `${PATH}/summary`, component: Summary, exact: true },
       { path: `${PATH}/reporting`, component: Reporting, exact: true },
-      { path: `${PATH}/modules`, component: Modules, exact: true },
-      { path: `${PATH}/hashmap`, component: HashMap, exact: true },
-      {
-        path: `${PATH}/hashmap/detail/:id`,
-        component: HashMapDetail,
-        exact: true,
-      },
-      { path: `${PATH}/pyscripts`, component: PyScripts, exact: true },
       { path: '*', component: E404 },
     ],
   },

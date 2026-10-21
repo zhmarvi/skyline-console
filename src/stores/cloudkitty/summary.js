@@ -16,6 +16,7 @@ import { action, observable } from 'mobx';
 import { get } from 'lodash';
 import client from 'client';
 import Base from 'stores/base';
+import { MAX_REPORT_DAYS } from 'resources/cloudkitty/reporting';
 
 // The rating summary is served by CloudKitty's v2 `/v2/summary` endpoint.
 // It returns aggregated cost data grouped by an arbitrary set of columns
@@ -174,9 +175,20 @@ export class CloudKittySummaryStore extends Base {
   // rely on CloudKitty's automatic project scoping for non-admin contexts.
   @action
   async fetchReport({ begin, end } = {}) {
+    const startDay = this.startOfUTCDay(begin);
+    const endDay = this.startOfUTCDay(end);
+    const dayCount = (endDay - startDay) / (24 * 60 * 60 * 1000) + 1;
+    if (
+      !Number.isFinite(dayCount) ||
+      dayCount < 1 ||
+      dayCount > MAX_REPORT_DAYS
+    ) {
+      throw new Error(
+        `Select a reporting range of 1 to ${MAX_REPORT_DAYS} days.`
+      );
+    }
     this.isLoading = true;
     try {
-      const startDay = this.startOfUTCDay(begin);
       const endExclusive = this.endOfUTCDay(end);
 
       // Cumulated totals by type across the whole range.
@@ -196,18 +208,24 @@ export class CloudKittySummaryStore extends Base {
         .map((type) => ({ type, rate: byType[type] }))
         .sort((a, b) => b.rate - a.rate);
 
-      // Per-day breakdown for the time series. Cap the number of days so an
-      // over-wide range cannot fan out into an unbounded number of requests.
-      const days = this.enumerateUTCDays(startDay, end, 92);
-      const dayResults = await Promise.all(
-        days.map((day) =>
-          this.fetchSummaryForPeriod({
-            begin: this.startOfUTCDay(day),
-            end: this.endOfUTCDay(day),
-            groupby: ['type'],
-          })
-        )
-      );
+      // Cover the entire selected period, including six-month/year presets.
+      // Bound concurrency rather than silently truncating the chart at 92 days.
+      const days = this.enumerateUTCDays(startDay, end, MAX_REPORT_DAYS);
+      const dayResults = [];
+      for (let offset = 0; offset < days.length; offset += 7) {
+        // Each batch must finish before starting another to limit API load.
+        // eslint-disable-next-line no-await-in-loop
+        const batch = await Promise.all(
+          days.slice(offset, offset + 7).map((day) =>
+            this.fetchSummaryForPeriod({
+              begin: this.startOfUTCDay(day),
+              end: this.endOfUTCDay(day),
+              groupby: ['type'],
+            })
+          )
+        );
+        dayResults.push(...batch);
+      }
 
       const timeline = days.map((day, i) => {
         const perType = {};

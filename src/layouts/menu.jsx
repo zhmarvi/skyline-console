@@ -1046,42 +1046,6 @@ const renderMenu = (t) => {
           level: 1,
           children: [],
         },
-        {
-          path: '/cloudkitty/modules',
-          name: t('Rating Modules'),
-          key: 'cloudkittyModules',
-          level: 1,
-          // Admin-only in CloudKitty (rating:list_modules => role:admin), so
-          // hide from member/reader users rather than letting them hit a 401.
-          policy: 'rating:list_modules',
-          children: [],
-        },
-        {
-          path: '/cloudkitty/hashmap',
-          name: t('HashMap'),
-          key: 'cloudkittyHashmap',
-          level: 1,
-          // Admin-only in CloudKitty (rating:module_config => role:admin).
-          policy: 'rating:module_config',
-          children: [
-            {
-              path: /^\/cloudkitty\/hashmap\/detail\/.[^/]+$/,
-              name: t('HashMap Service Detail'),
-              key: 'cloudkittyHashmapServiceDetail',
-              level: 2,
-              routePath: '/cloudkitty/hashmap/detail/:id',
-            },
-          ],
-        },
-        {
-          path: '/cloudkitty/pyscripts',
-          name: t('PyScripts'),
-          key: 'cloudkittyPyScripts',
-          level: 1,
-          // Admin-only in CloudKitty (rating:module_config => role:admin).
-          policy: 'rating:module_config',
-          children: [],
-        },
       ],
     },
     {

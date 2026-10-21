@@ -15,7 +15,19 @@
 import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { toJS } from 'mobx';
-import { Button, Card, Col, DatePicker, Empty, Row, Spin, Table } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Dropdown,
+  Empty,
+  Menu,
+  Row,
+  Spin,
+  Table,
+} from 'antd';
 import {
   Chart,
   Interval,
@@ -32,6 +44,12 @@ import { cloudkittyEndpoint } from 'client/client/constants';
 import NotFound from 'components/Cards/NotFound';
 import checkItemPolicy from 'resources/skyline/policy';
 import { formatRate } from 'resources/cloudkitty/rating';
+import {
+  getReportRange,
+  isValidReportRange,
+  reportDate,
+  shiftReportRange,
+} from 'resources/cloudkitty/reporting';
 import styles from './index.less';
 
 const { RangePicker } = DatePicker;
@@ -46,7 +64,9 @@ export class Reporting extends Component {
     this.store = globalCloudKittySummaryStore;
     this.state = {
       // Default to the current month, matching the dashboard's default range.
-      range: [moment().startOf('month'), moment()],
+      range: getReportRange('month'),
+      period: 'month',
+      amount: 1,
     };
   }
 
@@ -100,7 +120,23 @@ export class Reporting extends Component {
   }
 
   onRangeChange = (range) => {
-    this.setState({ range: range || [null, null] });
+    this.setState({ range: range || [null, null], period: null });
+  };
+
+  onSelectPeriod = (period, amount = 1, previous = false) => {
+    this.setState(
+      { range: getReportRange(period, amount, previous), period, amount },
+      this.fetchReport
+    );
+  };
+
+  onNavigate = (direction) => {
+    const { range, period, amount } = this.state;
+    const nextRange =
+      period && shiftReportRange(range, period, amount, direction);
+    if (nextRange) {
+      this.setState({ range: nextRange }, this.fetchReport);
+    }
   };
 
   onApply = () => {
@@ -108,15 +144,46 @@ export class Reporting extends Component {
   };
 
   fetchReport = () => {
-    const [start, end] = this.state.range;
-    if (!start || !end) {
+    const { range } = this.state;
+    if (!isValidReportRange(range)) {
       return;
     }
+    const [start, end] = range.map(reportDate);
     this.store.fetchReport({
       begin: start.toDate(),
       end: end.toDate(),
     });
   };
+
+  renderRangeMenu(previous = false) {
+    const options = previous
+      ? [
+          ['day', 1, t('Yesterday')],
+          ['week', 1, t('Last Week')],
+          ['month', 1, t('Last Month')],
+          ['month', 3, t('Last 3 Months')],
+          ['month', 6, t('Last 6 Months')],
+          ['year', 1, t('Last Year')],
+        ]
+      : [
+          ['day', 1, t('Day View')],
+          ['week', 1, t('Week View')],
+          ['month', 1, t('Month View')],
+          ['year', 1, t('Year View')],
+        ];
+    return (
+      <Menu>
+        {options.map(([period, amount, label]) => (
+          <Menu.Item
+            key={`${period}-${amount}`}
+            onClick={() => this.onSelectPeriod(period, amount, previous)}
+          >
+            {label}
+          </Menu.Item>
+        ))}
+      </Menu>
+    );
+  }
 
   renderPie() {
     const { repartition = [] } = this.report;
@@ -181,20 +248,24 @@ export class Reporting extends Component {
     if (!this.allowed) {
       return <NotFound title={t('rating report')} link="/base/overview" />;
     }
-    const { range } = this.state;
+    const { range, period, amount } = this.state;
+    const validRange = isValidReportRange(range);
+    const canNavigateNext =
+      period && shiftReportRange(range, period, amount, 1);
     const { repartition = [], totalCost = 0 } = this.report;
 
     return (
       <Spin spinning={this.store.isLoading}>
         <div className={styles.container}>
           <Card className={styles.panel}>
-            <Row gutter={16} align="middle">
+            <Row gutter={[16, 12]} align="middle">
               <Col>
                 <span className={styles.label}>{t('Period')}:</span>
               </Col>
               <Col>
                 <RangePicker
                   allowClear={false}
+                  format="YYYY-MM-DD"
                   value={range}
                   onChange={this.onRangeChange}
                   disabledDate={(current) =>
@@ -203,7 +274,11 @@ export class Reporting extends Component {
                 />
               </Col>
               <Col>
-                <Button type="primary" onClick={this.onApply}>
+                <Button
+                  type="primary"
+                  onClick={this.onApply}
+                  disabled={!validRange}
+                >
                   {t('Apply')}
                 </Button>
               </Col>
@@ -212,6 +287,47 @@ export class Reporting extends Component {
                 <span className={styles.total}>{formatRate(totalCost)}</span>
               </Col>
             </Row>
+            <Row gutter={[12, 12]} className={styles['range-controls']}>
+              <Col>
+                <Dropdown overlay={this.renderRangeMenu()} trigger={['click']}>
+                  <Button>{t('Period Range')}</Button>
+                </Dropdown>
+              </Col>
+              <Col>
+                <Dropdown
+                  overlay={this.renderRangeMenu(true)}
+                  trigger={['click']}
+                >
+                  <Button>{t('Preset Ranges')}</Button>
+                </Dropdown>
+              </Col>
+              <Col>
+                <Button
+                  onClick={() => this.onNavigate(-1)}
+                  disabled={!period || !validRange}
+                >
+                  {t('Previous')}
+                </Button>
+              </Col>
+              <Col>
+                <Button
+                  onClick={() => this.onNavigate(1)}
+                  disabled={!canNavigateNext || !validRange}
+                >
+                  {t('Next')}
+                </Button>
+              </Col>
+            </Row>
+            {!validRange && (
+              <Alert
+                className={styles['range-controls']}
+                type="warning"
+                showIcon
+                message={t(
+                  'Select a valid date range of up to 366 days ending today or earlier.'
+                )}
+              />
+            )}
           </Card>
 
           <Row gutter={16}>
