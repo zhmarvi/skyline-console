@@ -36,6 +36,7 @@ it('reports every day of a leap year with bounded request concurrency', async ()
   });
   expect(store.fetchSummaryForPeriod).toHaveBeenCalledTimes(367);
   expect(maximum).toBeLessThanOrEqual(7);
+  expect(report).toMatchObject({ begin: '2024-01-01', end: '2024-12-31' });
   expect(report.totalCost).toBe(366);
   expect(report.timeline).toHaveLength(366);
   expect(report.timeline[365]).toMatchObject({ date: '2024-12-31', total: 1 });
@@ -62,3 +63,41 @@ it.each([
     expect(store.isLoading).toBe(wasLoading);
   }
 );
+
+it('preserves the previous report and resets loading if a daily request fails', async () => {
+  const store = new CloudKittySummaryStore();
+  const previous = store.report;
+  store.fetchSummaryForPeriod = jest
+    .fn()
+    .mockResolvedValueOnce({ results: [{ type: 'compute', rate: 1 }] })
+    .mockRejectedValueOnce(new Error('Daily request failed'));
+  await expect(
+    store.fetchReport({
+      begin: new Date('2026-10-01T00:00:00Z'),
+      end: new Date('2026-10-01T00:00:00Z'),
+    })
+  ).rejects.toThrow('Daily request failed');
+  expect(store.report).toBe(previous);
+  expect(store.isLoading).toBe(false);
+  store.fetchSummaryForPeriod.mock.calls.forEach(([params]) => {
+    expect(params.strict).toBe(true);
+  });
+});
+
+it('propagates API failures in strict mode while keeping summary fallback', async () => {
+  const store = new CloudKittySummaryStore();
+  Object.defineProperty(store, 'client', {
+    value: { list: jest.fn().mockRejectedValue(new Error('API unavailable')) },
+  });
+  const params = {
+    begin: new Date('2026-10-01T00:00:00Z'),
+    end: new Date('2026-10-02T00:00:00Z'),
+  };
+  await expect(
+    store.fetchSummaryForPeriod({ ...params, strict: true })
+  ).rejects.toThrow('API unavailable');
+  await expect(store.fetchSummaryForPeriod(params)).resolves.toEqual({
+    results: [],
+    total: 0,
+  });
+});

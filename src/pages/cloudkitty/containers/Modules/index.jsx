@@ -17,6 +17,7 @@ import Base from 'containers/List';
 import { CloudKittyModuleStore } from 'stores/cloudkitty/module';
 import { cloudkittyEndpoint } from 'client/client/constants';
 import { actionConfigs } from './actions';
+import styles from './index.less';
 
 export class Modules extends Base {
   init() {
@@ -55,10 +56,19 @@ export class Modules extends Base {
     return true;
   }
 
+  getTableProps() {
+    return {
+      ...super.getTableProps(),
+      className: styles.modules,
+      actionColumnWidth: 240,
+    };
+  }
+
   getColumns = () => [
     {
       title: t('Name'),
       dataIndex: 'name',
+      width: 150,
     },
     {
       title: t('Description'),
@@ -68,16 +78,19 @@ export class Modules extends Base {
     {
       title: t('Configurable'),
       dataIndex: 'hotConfig',
+      width: 150,
       valueRender: 'yesNo',
     },
     {
       title: t('Priority'),
       dataIndex: 'priority',
+      width: 100,
       isHideable: true,
     },
     {
       title: t('Enabled'),
       dataIndex: 'enabled',
+      width: 110,
       valueRender: 'yesNo',
     },
   ];

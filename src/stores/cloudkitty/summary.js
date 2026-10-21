@@ -60,7 +60,7 @@ export class CloudKittySummaryStore extends Base {
   // not send an explicit project filter here. `groupby` is a repeated query
   // param; the request layer serializes arrays with arrayFormat 'repeat',
   // which is what the API's MultiQueryParam expects.
-  async fetchSummaryForPeriod({ begin, end, groupby } = {}) {
+  async fetchSummaryForPeriod({ begin, end, groupby, strict = false } = {}) {
     const params = {
       begin: begin.toISOString(),
       end: end.toISOString(),
@@ -76,6 +76,9 @@ export class CloudKittySummaryStore extends Base {
         total: get(result, 'total', 0),
       };
     } catch (e) {
+      if (strict) {
+        throw e;
+      }
       return { results: [], total: 0 };
     }
   }
@@ -196,6 +199,7 @@ export class CloudKittySummaryStore extends Base {
         begin: startDay,
         end: endExclusive,
         groupby: ['type'],
+        strict: true,
       });
 
       const byType = {};
@@ -221,6 +225,7 @@ export class CloudKittySummaryStore extends Base {
               begin: this.startOfUTCDay(day),
               end: this.endOfUTCDay(day),
               groupby: ['type'],
+              strict: true,
             })
           )
         );
@@ -256,7 +261,14 @@ export class CloudKittySummaryStore extends Base {
 
       const totalCost = repartition.reduce((acc, r) => acc + r.rate, 0);
 
-      this.report = { repartition, timeline, series, totalCost };
+      this.report = {
+        begin: this.formatUTCDate(startDay),
+        end: this.formatUTCDate(endDay),
+        repartition,
+        timeline,
+        series,
+        totalCost,
+      };
       return this.report;
     } finally {
       this.isLoading = false;

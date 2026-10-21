@@ -39,6 +39,13 @@ import {
   Coordinate,
 } from 'bizcharts';
 import moment from 'moment';
+import FileSaver from 'file-saver';
+import { DownloadOutlined } from '@ant-design/icons';
+import Notify from 'components/Notify';
+import {
+  buildReportingCsv,
+  reportingCsvFilename,
+} from 'resources/cloudkitty/reporting-csv';
 import globalCloudKittySummaryStore from 'stores/cloudkitty/summary';
 import { cloudkittyEndpoint } from 'client/client/constants';
 import NotFound from 'components/Cards/NotFound';
@@ -67,6 +74,7 @@ export class Reporting extends Component {
       range: getReportRange('month'),
       period: 'month',
       amount: 1,
+      reportReady: false,
     };
   }
 
@@ -143,16 +151,47 @@ export class Reporting extends Component {
     this.fetchReport();
   };
 
-  fetchReport = () => {
+  get canExport() {
+    const { range, reportReady } = this.state;
+    const { begin, end } = this.report;
+    return (
+      reportReady &&
+      !this.store.isLoading &&
+      isValidReportRange(range) &&
+      begin === reportDate(range[0]).format('YYYY-MM-DD') &&
+      end === reportDate(range[1]).format('YYYY-MM-DD')
+    );
+  }
+
+  onExport = () => {
+    if (!this.canExport) {
+      return;
+    }
+    const report = this.report;
+    const blob = new Blob([buildReportingCsv(report)], {
+      type: 'text/csv;charset=utf-8',
+    });
+    FileSaver.saveAs(blob, reportingCsvFilename(report));
+  };
+
+  fetchReport = async () => {
     const { range } = this.state;
     if (!isValidReportRange(range)) {
       return;
     }
     const [start, end] = range.map(reportDate);
-    this.store.fetchReport({
-      begin: start.toDate(),
-      end: end.toDate(),
-    });
+    this.setState({ reportReady: false });
+    try {
+      await this.store.fetchReport({
+        begin: start.toDate(),
+        end: end.toDate(),
+      });
+      this.setState({ reportReady: true });
+    } catch (error) {
+      Notify.error(
+        t('Unable to load the complete rating report. Please retry.')
+      );
+    }
   };
 
   renderRangeMenu(previous = false) {
@@ -264,6 +303,7 @@ export class Reporting extends Component {
               </Col>
               <Col>
                 <RangePicker
+                  disabled={this.store.isLoading}
                   allowClear={false}
                   format="YYYY-MM-DD"
                   value={range}
@@ -277,7 +317,7 @@ export class Reporting extends Component {
                 <Button
                   type="primary"
                   onClick={this.onApply}
-                  disabled={!validRange}
+                  disabled={!validRange || this.store.isLoading}
                 >
                   {t('Apply')}
                 </Button>
@@ -290,7 +330,9 @@ export class Reporting extends Component {
             <Row gutter={[12, 12]} className={styles['range-controls']}>
               <Col>
                 <Dropdown overlay={this.renderRangeMenu()} trigger={['click']}>
-                  <Button>{t('Period Range')}</Button>
+                  <Button disabled={this.store.isLoading}>
+                    {t('Period Range')}
+                  </Button>
                 </Dropdown>
               </Col>
               <Col>
@@ -298,13 +340,15 @@ export class Reporting extends Component {
                   overlay={this.renderRangeMenu(true)}
                   trigger={['click']}
                 >
-                  <Button>{t('Preset Ranges')}</Button>
+                  <Button disabled={this.store.isLoading}>
+                    {t('Preset Ranges')}
+                  </Button>
                 </Dropdown>
               </Col>
               <Col>
                 <Button
                   onClick={() => this.onNavigate(-1)}
-                  disabled={!period || !validRange}
+                  disabled={!period || !validRange || this.store.isLoading}
                 >
                   {t('Previous')}
                 </Button>
@@ -312,9 +356,20 @@ export class Reporting extends Component {
               <Col>
                 <Button
                   onClick={() => this.onNavigate(1)}
-                  disabled={!canNavigateNext || !validRange}
+                  disabled={
+                    !canNavigateNext || !validRange || this.store.isLoading
+                  }
                 >
                   {t('Next')}
+                </Button>
+              </Col>
+              <Col>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={this.onExport}
+                  disabled={!this.canExport}
+                >
+                  {t('Export CSV')}
                 </Button>
               </Col>
             </Row>

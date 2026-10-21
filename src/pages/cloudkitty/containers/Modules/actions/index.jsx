@@ -17,10 +17,10 @@ import EditPriority from './EditPriority';
 
 export const actionConfigs = {
   rowActions: {
-    firstAction: EditPriority,
+    firstAction: ToggleEnabled,
     moreActions: [
       {
-        action: ToggleEnabled,
+        action: EditPriority,
       },
     ],
   },
